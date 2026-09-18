@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Revisión Evaluaciones Técnicas</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+    .check{
+    color:#d97706;
+    font-weight:bold;
+}
+
+.audit-box{
+    margin-top:10px;
+    padding:10px;
+    background:#fff;
+    border:1px solid #ddd;
+    border-radius:8px;
+}
+
+body{
+    font-family:Segoe UI, sans-serif;
+    background:#f3f4f6;
+    padding:20px;
+}
+
+.card{
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:15px;
+    box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+
+select{
+    width:100%;
+    padding:10px;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+
+.pregunta{
+    border:1px solid #ddd;
+    padding:15px;
+    margin-bottom:10px;
+    border-radius:8px;
+    background:#fafafa;
+}
+
+button{
+    padding:10px 15px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.btnCalcular{
+    background:#111827;
+    color:white;
+}
+
+.correcta{
+    color:green;
+    font-weight:bold;
+}
+
+.incorrecta{
+    color:red;
+    font-weight:bold;
+}
+
+#resultado{
+    margin-top:15px;
+    font-size:18px;
+}
+
+.componente-resumen{
+    margin:10px 0 15px 0;
+    padding:12px;
+    background:#f9fafb;
+    border:1px solid #ddd;
+    border-radius:8px;
+}
+
+.componente-resumen h3{
+    margin:0 0 8px 0;
+}
+
+.componente-grupo{
+    margin-bottom:15px;
+}
+
+</style>
+</head>
+<body>
+
+<h2>Revisión de Evaluaciones Técnicas</h2>
+
+<div class="card">
+    <h3>Técnico</h3>
+
+    <select id="selectUsuario">
+        <option>Cargando usuarios...</option>
+    </select>
+</div>
+
+<div class="card">
+    <h3>Intento</h3>
+
+    <select id="selectIntento">
+        <option>Seleccione un técnico</option>
+    </select>
+</div>
+
+<div id="contenedorPreguntas"></div>
+
+<div class="card">
+    <button class="btnCalcular" onclick="calcularResultado()">
+        Calcular Resultado
+    </button>
+
+    <div id="resultado"></div>
+</div>
+
+<script>
+
+
+const supabaseUrl = "https://gogalvnmpntvjtiunowz.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvZ2Fsdm5tcG50dmp0aXVub3d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNzM5MzcsImV4cCI6MjA4Nzg0OTkzN30.wOZbM_s2F-FjdrXqUz6lvRnOYAPuTYlGhwcP3hzbYTw";
+
+const supabaseClient =
+supabase.createClient(
+    supabaseUrl,
+    supabaseKey
+);
+
+
+
+let datosActuales = [];
+
+
+const STOPWORDS = new Set([
+    "de","la","el","en","y","a","los","las","un","una",
+    "que","es","se","por","para","con","del","al"
+]);
+function normalizar(texto){
+
+    return (texto || "")
+        .toString()
+        .toLowerCase()
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g," ");
+}
+
+
+function parseFechaRobusta(valor){
+    if(valor instanceof Date){
+        return isNaN(valor.getTime()) ? null : valor;
+    }
+
+    if(valor === null || valor === undefined || valor === "") return null;
+
+    const texto = String(valor).trim();
+
+
+    const m = texto.match(/^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?$/);
+    if(m){
+        const anio = Number(m[1]);
+        const mes = Number(m[2]);
+        const dia = Number(m[3]);
+        const hora = Number(m[4]);
+        const minuto = Number(m[5]);
+        const segundo = Number(m[6] || 0);
+        const fecha = new Date(anio, mes - 1, dia, hora, minuto, segundo, 0);
+
+        if(
+            fecha.getFullYear() === anio &&
+            fecha.getMonth() === mes - 1 &&
+            fecha.getDate() === dia &&
+            fecha.getHours() === hora &&
+            fecha.getMinutes() === minuto
+        ){
+            return fecha;
+        }
+        return null;
+    }
+
+    
+    const fecha = new Date(texto);
+    return isNaN(fecha.getTime()) ? null : fecha;
+}
+
+function formatoFechaMinuto(valor){
+    const d = parseFechaRobusta(valor);
+    if(!d) return null;
+
+    return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}`;
+}
+function embedding(texto){
+
+    const words = normalizar(texto).split(" ");
+
+    const map = {};
+
+    for(let w of words){
+
+        if(!map[w]) map[w] = 0;
+
+        map[w] += 1;
+    }
+
+    return map;
+}
+function expandirSiglas(texto){
+
+    if(!texto) return "";
+
+    let t = texto.toLowerCase();
+
+    
+    const siglas = t.match(/\b[a-z]{2,10}\b/gi) || [];
+
+    siglas.forEach(sigla => {
+
+        
+        const expansion = heuristicaSigla(sigla);
+
+        if(expansion){
+            const regex = new RegExp(`\\b${sigla}\\b`, "g");
+            t = t.replace(regex, expansion);
+        }
+    });
+
+    return t;
+}
+function heuristicaSigla(sigla){
+
+    const map = {
+        "smm": "motor module system",
+        "vfd": "variable frequency drive",
+        "plc": "programmable logic controller",
+        "hmi": "human machine interface"
+    };
+
+    return map[sigla.toLowerCase()] || null;
+}
+function similitudIA(a, b){
+
+    const A = embedding(a);
+    const B = embedding(b);
+
+    let dot = 0;
+    let magA = 0;
+    let magB = 0;
+
+    const keys = new Set([...Object.keys(A), ...Object.keys(B)]);
+
+    keys.forEach(k => {
+
+        const va = A[k] || 0;
+        const vb = B[k] || 0;
+
+        dot += va * vb;
+        magA += va * va;
+        magB += vb * vb;
+    });
+
+    if(magA === 0 || magB === 0) return 0;
+
+    return dot / (Math.sqrt(magA) * Math.sqrt(magB));
+}
+function respuestaIA(usuario, correcta){
+
+    usuario = normalizar(expandirSiglas(usuario));
+    correcta = normalizar(expandirSiglas(correcta));
+
+    if(!usuario || !correcta) return 0;
+
+    
+    if(usuario === correcta) return 1;
+
+
+    if(usuario.includes(correcta) || correcta.includes(usuario)) return 1;
+
+
+    const palabrasUsuario = usuario
+        .split(/\s+/)
+        .filter(w => w.length > 2 && !STOPWORDS.has(w));
+
+    const palabrasCorrecta = correcta
+        .split(/\s+/)
+        .filter(w => w.length > 2 && !STOPWORDS.has(w));
+
+    for(const palabraUsuario of palabrasUsuario){
+        for(const palabraCorrecta of palabrasCorrecta){
+
+            if(
+                palabraUsuario === palabraCorrecta ||
+                palabraUsuario.includes(palabraCorrecta) ||
+                palabraCorrecta.includes(palabraUsuario) ||
+                levenshtein(palabraUsuario, palabraCorrecta) <= 2
+            ){
+                return 1;
+            }
+        }
+    }
+
+
+    return 0;
+}
+async function cargarUsuarios() {
+
+    const select =
+    document.getElementById("selectUsuario");
+
+    select.innerHTML =
+    "<option>Cargando usuarios...</option>";
+
+    let todos = [];
+    let desde = 0;
+    const bloque = 1000;
+
+    try {
+
+        while (true) {
+
+            const { data, error } =
+            await supabaseClient
+                .from("resultados_test_tecnico")
+                .select("usuario")
+                .range(desde, desde + bloque - 1);
+
+            if (error) {
+                throw error;
+            }
+             console.table(
+    data.map(x => ({
+        original: x.fecha,
+        timestamp: new Date(x.fecha).getTime()
+    }))
+);
+            if (!data || data.length === 0) {
+                break;
+            }
+
+            todos.push(...data);
+
+            if (data.length < bloque) {
+                break;
+            }
+
+            desde += bloque;
+        }
+
+        const usuarios =
+        [...new Set(
+            todos
+                .map(x =>
+                    x.usuario
+                        ?.replace(/\s+/g, " ")
+                        .trim()
+                )
+                .filter(Boolean)
+        )];
+
+        usuarios.sort((a, b) =>
+            a.localeCompare(
+                b,
+                "es",
+                { sensitivity: "base" }
+            )
+        );
+
+        select.innerHTML =
+        "<option value=''>Seleccione técnico</option>";
+
+        usuarios.forEach(usuario => {
+
+            const option =
+            document.createElement("option");
+
+            option.value = usuario;
+            option.textContent = usuario;
+
+            select.appendChild(option);
+        });
+
+        console.log("Registros leídos:", todos.length);
+        console.log("Usuarios únicos:", usuarios.length);
+        console.table(usuarios);
+
+    } catch (err) {
+
+        console.error(err);
+
+        select.innerHTML =
+        "<option>Error al cargar usuarios</option>";
+    }
+}
+
+
+
+
+async function cargarIntentos() {
+
+    const usuario =
+    document.getElementById("selectUsuario")
+    .value
+    .trim();
+
+    const select =
+    document.getElementById("selectIntento");
+
+    document.getElementById("contenedorPreguntas").innerHTML = "";
+
+    if (!usuario) {
+        select.innerHTML = "<option>Seleccione técnico</option>";
+        return;
+    }
+
+    try {
+
+        const { data, error } =
+        await supabaseClient
+            .from("resultados_test_tecnico")
+            .select("fecha")
+            .eq("usuario", usuario);
+
+        if (error) throw error;
+
+        console.log("Total filas usuario:", data.length);
+
+
+        const minutos = data.map(x => {
+
+            const formato = formatoFechaMinuto(x.fecha);
+
+            return formato;
+
+        });
+
+        const fechasUnicas = [...new Set(minutos)];
+
+        console.log("Intentos reales:", fechasUnicas);
+
+        select.innerHTML =
+        "<option value=''>Seleccione intento</option>";
+
+        fechasUnicas.forEach(f => {
+
+            const option = document.createElement("option");
+            option.value = f;
+            option.textContent = f;
+
+            select.appendChild(option);
+        });
+
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+
+async function cargarPreguntas(){
+
+    const usuario =
+    document.getElementById("selectUsuario").value;
+
+    const intento =
+    document.getElementById("selectIntento").value;
+
+    const contenedor =
+    document.getElementById("contenedorPreguntas");
+
+    if(!usuario || !intento){
+        contenedor.innerHTML = "";
+        return;
+    }
+
+    contenedor.innerHTML = "Cargando evaluación...";
+
+    try{
+
+
+        const { data: respuestasUsuario, error: err1 } =
+        await supabaseClient
+        .from("resultados_test_tecnico")
+        .select("*")
+        .eq("usuario", usuario);
+
+        if(err1) throw err1;
+
+
+
+        datosActuales = respuestasUsuario.filter(x => {
+            const formato = formatoFechaMinuto(x.fecha);
+            return formato === intento;
+        });
+
+        if(datosActuales.length === 0){
+            contenedor.innerHTML =
+            "No hay preguntas para este intento";
+            return;
+        }
+
+
+
+        let bancoTest = [];
+        try {
+            const { data, error } =
+            await supabaseClient
+            .from("Test_val")
+            .select("*");
+
+            if(error) throw error;
+            bancoTest = data || [];
+        } catch(err3) {
+            console.error("No se pudo cargar Test_val para relacionar componentes:", err3);
+            bancoTest = [];
+        }
+
+
+
+        let datosPTActual = [];
+        try {
+            const { data, error } =
+            await supabaseClient
+            .from("PTACTUAL")
+            .select('"Codigo RH", Componente, "Puntaje de actividad"');
+
+            if(error) throw error;
+            datosPTActual = data || [];
+        } catch(err4) {
+            console.error("No se pudo cargar PTACTUAL para relacionar componentes:", err4);
+            datosPTActual = [];
+        }
+
+        const mapaComponentes = {};
+
+        (datosPTActual || []).forEach(registro => {
+            const codigo = String(registro["Codigo RH"] || "").trim();
+
+            if(codigo){
+                const valorPuntaje = Number(
+                    String(registro["Puntaje de actividad"] ?? "")
+                        .replace(",", ".")
+                );
+
+                mapaComponentes[codigo] = {
+                    componente: registro.Componente || "Sin componente",
+                    puntaje: Number.isFinite(valorPuntaje) ? valorPuntaje : 0
+                };
+            }
+        });
+
+
+        const mapaPreguntaCodigo = {};
+
+        (bancoTest || []).forEach(registro => {
+            const pregunta = normalizar(registro.Preguntas);
+            const codigo = String(registro.Codigo || "").trim();
+
+            if(!pregunta || !codigo) return;
+
+            if(!mapaPreguntaCodigo[pregunta]){
+                mapaPreguntaCodigo[pregunta] = [];
+            }
+
+            if(!mapaPreguntaCodigo[pregunta].includes(codigo)){
+                mapaPreguntaCodigo[pregunta].push(codigo);
+            }
+        });
+
+        let html = `
+        <div class="card">
+            <h3>Resultado Evaluación</h3>
+        `;
+
+
+
+        const gruposComponentes = {};
+        const ordenComponentes = [];
+
+        datosActuales.forEach((item,index)=>{
+
+            const preguntaUsuario =
+            normalizar(item.pregunta);
+
+            const respuestaUsuario =
+            normalizar(item.respuesta);
+
+
+            const coincidencias =
+            bancoTest.filter(q =>
+                normalizar(q.Preguntas) === preguntaUsuario
+            );
+
+
+            const codigosTest = mapaPreguntaCodigo[preguntaUsuario] || [];
+
+            let preguntaEncontrada = null;
+
+
+            const codigoDirecto = String(
+                item.Codigo ||
+                item.codigo ||
+                item["Codigo RH"] ||
+                item.codigo_rh ||
+                ""
+            ).trim();
+
+            if(codigoDirecto){
+                preguntaEncontrada = coincidencias.find(q =>
+                    String(q.Codigo || "").trim() === codigoDirecto
+                ) || null;
+            }
+
+
+            if(!preguntaEncontrada && coincidencias.length === 1){
+                preguntaEncontrada = coincidencias[0];
+            }
+
+
+            if(!preguntaEncontrada && coincidencias.length > 1){
+
+                let mejor = null;
+                let mejorScore = -1;
+
+                coincidencias.forEach(q => {
+
+                    const respuestaBanco =
+                    normalizar(q.Respuestas || "");
+
+                    let score = 0;
+
+                    if(respuestaUsuario && respuestaBanco){
+                        score = respuestaSimilar(
+                            respuestaUsuario,
+                            respuestaBanco
+                        );
+                    }
+
+                    if(score > mejorScore){
+                        mejorScore = score;
+                        mejor = q;
+                    }
+                });
+
+                preguntaEncontrada = mejor;
+            }
+
+            let estado = "";
+            let clase = "";
+            let respuestaCorrecta = "";
+            let codigoPregunta = "";
+            let componentePregunta = "Sin componente";
+
+
+
+            if(!preguntaEncontrada){
+
+                estado = "⚠ Pregunta no encontrada";
+                clase = "check";
+
+                item.estadoIA = "check";
+            }
+
+
+
+            else{
+
+                respuestaCorrecta =
+                preguntaEncontrada.Respuestas || "";
+
+
+                if(codigosTest.length === 1){
+                    codigoPregunta = codigosTest[0];
+                    const infoComponente =
+                        mapaComponentes[codigoPregunta];
+
+                    componentePregunta = infoComponente
+                        ? infoComponente.componente
+                        : "Sin componente";
+
+                    item.puntajeActividad = infoComponente
+                        ? infoComponente.puntaje
+                        : 0;
+                }
+                else if(codigosTest.length > 1){
+
+                    codigoPregunta = codigosTest.join(", ");
+                    componentePregunta = "Sin componente (código ambiguo)";
+                    item.puntajeActividad = 0;
+                }
+
+                item.codigoPregunta = codigoPregunta;
+                item.componente = componentePregunta;
+
+                const scoreRespuesta = respuestaIA(
+                    respuestaUsuario,
+                    respuestaCorrecta
+                );
+
+                if(scoreRespuesta === 1){
+
+                    estado = "✔ Correcta";
+                    clase = "correcta";
+
+                    item.estadoIA = "correcta";
+                }
+                else{
+
+                    estado = "✖ Incorrecta";
+                    clase = "incorrecta";
+
+                    item.estadoIA = "incorrecta";
+                }
+            }
+
+            if(!item.componente){
+                item.componente = componentePregunta;
+            }
+
+            if(!gruposComponentes[item.componente]){
+                gruposComponentes[item.componente] = [];
+                ordenComponentes.push(item.componente);
+            }
+
+            gruposComponentes[item.componente].push({
+                item,
+                index,
+                respuestaCorrecta,
+                clase
+            });
+        });
+
+
+
+        ordenComponentes.forEach(componente => {
+
+            const preguntasComponente =
+            gruposComponentes[componente];
+
+            let buenas = 0;
+
+            preguntasComponente.forEach(registro => {
+                if(registro.item.estadoIA === "correcta"){
+                    buenas++;
+                }
+            });
+
+            html += `
+                <div class="componente-grupo">
+                    <div class="componente-resumen">
+                        <h3>${componente}</h3>
+                        <b>Buenas: ${buenas} de ${preguntasComponente.length}</b>
+                    </div>
+            `;
+
+            preguntasComponente.forEach(registro => {
+
+                const item = registro.item;
+                const index = registro.index;
+                const respuestaCorrecta = registro.respuestaCorrecta;
+
+                html += `
+                <div class="pregunta">
+
+                    <div>
+                        <b>${index + 1}. ${item.pregunta}</b>
+                    </div>
+
+                    <br>
+
+                    <div>
+                        <b>Respuesta usuario:</b><br>
+                        ${item.respuesta || "(Sin respuesta)"}
+                    </div>
+
+                    <br>
+
+                    <div>
+                        <b>Respuesta correcta:</b><br>
+                        ${respuestaCorrecta || "No encontrada"}
+                    </div>
+
+                    <br>
+
+                    <div>
+
+                        <label style="margin-right:20px;">
+                            <input
+                                type="radio"
+                                name="val_${index}"
+                                value="correcta"
+                                ${item.estadoIA === "correcta" ? "checked" : ""}>
+                            Correcta
+                        </label>
+
+                        <label>
+                            <input
+                                type="radio"
+                                name="val_${index}"
+                                value="incorrecta"
+                                ${item.estadoIA === "incorrecta" ? "checked" : ""}>
+                           Incorrecta
+                        </label>
+
+                    </div>
+
+                </div>
+                `;
+            });
+
+            html += `</div>`;
+        });
+
+        html += "</div>";
+
+        contenedor.innerHTML = html;
+
+    }
+    catch(err){
+
+        console.error(err);
+
+        contenedor.innerHTML =
+        "Error al cargar evaluación";
+    }
+}
+
+
+function similitudPregunta(a, b){
+
+    if(!a || !b) return 0;
+
+    a = normalizar(expandirSiglas(a));
+    b = normalizar(expandirSiglas(b));
+
+    if(a === b) return 1;
+
+    const A = a.split(" ");
+    const B = b.split(" ");
+
+    let match = 0;
+
+    for(let w of A){
+        for(let v of B){
+
+            if(
+                w === v ||
+                w.includes(v) ||
+                v.includes(w) ||
+                levenshtein(w, v) <= 2
+            ){
+                match++;
+                break;
+            }
+        }
+    }
+
+    return match / Math.max(A.length, B.length);
+}
+function levenshtein(a, b){
+
+    const matrix = Array.from({length: a.length+1}, () =>
+        new Array(b.length+1).fill(0)
+    );
+
+    for(let i=0;i<=a.length;i++) matrix[i][0]=i;
+    for(let j=0;j<=b.length;j++) matrix[0][j]=j;
+
+    for(let i=1;i<=a.length;i++){
+        for(let j=1;j<=b.length;j++){
+
+            const cost = a[i-1] === b[j-1] ? 0 : 1;
+
+            matrix[i][j] = Math.min(
+                matrix[i-1][j] + 1,
+                matrix[i][j-1] + 1,
+                matrix[i-1][j-1] + cost
+            );
+        }
+    }
+
+    return matrix[a.length][b.length];
+}
+
+function similitudInteligente(a, b){
+    return similitudIA(a, b);
+}
+
+function respuestaSimilar(a, b){
+
+    a = normalizar(a);
+    b = normalizar(b);
+
+    if(!a || !b) return 0;
+
+    if(a === b) return 1;
+
+    // contiene fuerte
+    if(a.includes(b) || b.includes(a)) return 0.95;
+
+    const sim = similitudInteligente(a, b);
+
+
+    if(sim > 0 && sim < 0.2){
+        return 0.5;
+    }
+
+    return sim;
+}
+
+
+async function calcularResultado(){
+
+    let correctas = 0;
+    let incorrectas = 0;
+
+    datosActuales.forEach((item,index)=>{
+
+        const seleccion =
+        document.querySelector(
+            `input[name="val_${index}"]:checked`
+        );
+
+        if(!seleccion) return;
+
+        if(seleccion.value === "correcta"){
+            correctas++;
+        }
+        else{
+            incorrectas++;
+        }
+
+    });
+
+    const total = correctas + incorrectas;
+
+    const porcentaje =
+    total > 0
+        ? ((correctas / total) * 100).toFixed(1)
+        : 0;
+
+
+
+    const resumenComponentes = {};
+    const ordenResumen = [];
+
+    datosActuales.forEach((item, index) => {
+
+        const seleccion =
+            document.querySelector(
+                `input[name="val_${index}"]:checked`
+            );
+
+        const componente =
+            item.componente || "Sin componente";
+
+        if(!resumenComponentes[componente]){
+            resumenComponentes[componente] = {
+                buenas: 0,
+                total: 0,
+                actividades: {}
+            };
+            ordenResumen.push(componente);
+        }
+
+        const grupo = resumenComponentes[componente];
+        grupo.total++;
+
+        if(seleccion && seleccion.value === "correcta"){
+            grupo.buenas++;
+        }
+
+        const codigo = String(item.codigoPregunta || "").trim();
+        const puntaje = Number(item.puntajeActividad || 0);
+
+
+        if(codigo && puntaje > 0 && !codigo.includes(",")){
+            grupo.actividades[codigo] = puntaje;
+        }
+    });
+
+    let puntajeTotalPosible = 0;
+    let puntajeTotalObtenido = 0;
+    let htmlComponentes = `
+        <div class="card">
+            <h3>Calificación por componente</h3>
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd;">Componente</th>
+                        <th style="padding:8px;border-bottom:1px solid #ddd;">Buenas</th>
+                        <th style="padding:8px;border-bottom:1px solid #ddd;">Calificación</th>
+                        <th style="padding:8px;border-bottom:1px solid #ddd;">Puntos</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    ordenResumen.forEach(componente => {
+
+        const grupo = resumenComponentes[componente];
+        const porcentajeComponente =
+            grupo.total > 0
+                ? (grupo.buenas / grupo.total) * 100
+                : 0;
+
+        const puntosComponente =
+            Object.values(grupo.actividades)
+                .reduce((suma, valor) => suma + Number(valor || 0), 0);
+
+        const puntosObtenidos =
+            porcentajeComponente >= 50
+                ? puntosComponente
+                : 0;
+
+        puntajeTotalPosible += puntosComponente;
+        puntajeTotalObtenido += puntosObtenidos;
+
+        htmlComponentes += `
+            <tr>
+                <td style="padding:8px;border-bottom:1px solid #eee;"><b>${componente}</b></td>
+                <td style="padding:8px;text-align:center;border-bottom:1px solid #eee;">${grupo.buenas} de ${grupo.total}</td>
+                <td style="padding:8px;text-align:center;border-bottom:1px solid #eee;">${porcentajeComponente.toFixed(1)}%</td>
+                <td style="padding:8px;text-align:center;border-bottom:1px solid #eee;">${puntosObtenidos} / ${puntosComponente}</td>
+            </tr>
+        `;
+    });
+
+    const porcentajePuntosTotal =
+        puntajeTotalPosible > 0
+            ? (puntajeTotalObtenido / puntajeTotalPosible) * 100
+            : 0;
+
+
+    let htmlComparacionTecnico = `
+        <div style="margin-top:15px;padding:12px;background:#fff;border:1px solid #ddd;border-radius:8px;">
+            <b>Comparación con Datos_personales</b><br>
+            <span>Cargando PUNTAJE TECNICO...</span>
+        </div>
+    `;
+
+    try {
+        const nombreTecnico = document.getElementById("selectUsuario")?.value || "";
+
+        if(nombreTecnico){
+            const { data: datosPersonales, error: errorDatosPersonales } =
+                await supabaseClient
+                    .from("Datos_personales")
+                    .select("*")
+                    .ilike("NOMBRE", `%${nombreTecnico}%`);
+
+            if(errorDatosPersonales){
+                console.error("Error Datos_personales:", errorDatosPersonales);
+                htmlComparacionTecnico = `
+                    <div style="margin-top:15px;padding:12px;background:#fff;border:1px solid #ddd;border-radius:8px;">
+                        <b>Comparación con Datos_personales</b><br>
+                        No fue posible consultar el PUNTAJE TECNICO.
+                    </div>`;
+            } else if(datosPersonales && datosPersonales.length > 0){
+                const registro = datosPersonales[0];
+                const puntajeTecnico = Number(registro["PUNTAJE TECNICO"] || 0);
+                const diferencia = puntajeTotalObtenido - puntajeTecnico;
+                const coincide = Math.abs(diferencia) < 0.0001;
+
+                htmlComparacionTecnico = `
+                    <div style="margin-top:15px;padding:12px;background:#fff;border:1px solid #ddd;border-radius:8px;">
+                        <b>Comparación con archivo excel de PT</b><br><br>
+                        <b>Nombre:</b> ${registro.NOMBRE || nombreTecnico}<br>
+                        <b>Puntaje total revalidado:</b> ${puntajeTotalObtenido}<br>
+                        <b>Puntaje tecnico evaluado:</b> ${puntajeTecnico}<br>
+                        <b>Diferencia:</b> ${diferencia}<br>
+                        
+                    </div>`;
+            } else {
+                htmlComparacionTecnico = `
+                    <div style="margin-top:15px;padding:12px;background:#fff;border:1px solid #ddd;border-radius:8px;">
+                        <b>Comparación con Datos_personales</b><br>
+                        No se encontró el técnico <b>${nombreTecnico}</b> en Datos_personales.
+                    </div>`;
+            }
+        }
+    } catch(errorComparacion){
+        console.error("Error comparando Datos_personales:", errorComparacion);
+        htmlComparacionTecnico = `
+            <div style="margin-top:15px;padding:12px;background:#fff;border:1px solid #ddd;border-radius:8px;">
+                <b>Comparación con Datos_personales</b><br>
+                Error al consultar PUNTAJE TECNICO.
+            </div>`;
+    }
+
+    htmlComponentes += `
+                </tbody>
+            </table>
+
+            <div style="margin-top:15px;padding:12px;background:#f9fafb;border:1px solid #ddd;border-radius:8px;">
+
+            </div>
+
+            ${htmlComparacionTecnico}
+        </div>
+    `;
+
+    document.getElementById("resultado").innerHTML = `
+
+        <div class="card">
+
+            <h3>Resultado Final</h3>
+
+            ✅ Correctas: ${correctas}<br>
+            ❌ Incorrectas: ${incorrectas}<br><br>
+
+            <b>Calificación: ${porcentaje}%</b>
+
+        </div>
+
+        ${htmlComponentes}
+
+    `;
+}
+
+
+
+document
+.getElementById("selectUsuario")
+.addEventListener(
+    "change",
+    cargarIntentos
+);
+
+document
+.getElementById("selectIntento")
+.addEventListener(
+    "change",
+    cargarPreguntas
+);
+
+
+
+cargarUsuarios();
+
+</script>
+
+</body>
+</html>
+
+

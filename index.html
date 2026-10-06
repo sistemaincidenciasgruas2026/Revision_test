@@ -2,9 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Revisión Evaluaciones Técnicas</title>
+<title>Revisión Evaluaciones Técnicas - Puntaje Real</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
 <style>
     .check{
@@ -71,9 +72,120 @@ button{
     font-weight:bold;
 }
 
+
 #resultado{
     margin-top:15px;
     font-size:18px;
+}
+
+.resultado-resumen{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:10px;
+    margin-top:12px;
+}
+
+.resumen-metrica{
+    background:#f8fafc;
+    border:1px solid #e5e7eb;
+    border-radius:10px;
+    padding:12px;
+}
+
+.resumen-metrica .etiqueta{
+    display:block;
+    font-size:12px;
+    color:#6b7280;
+    margin-bottom:5px;
+}
+
+.resumen-metrica .valor{
+    font-size:22px;
+    font-weight:700;
+}
+
+.resultado-seccion{
+    margin-top:12px;
+    border:1px solid #e5e7eb;
+    border-radius:10px;
+    background:#fff;
+    overflow:hidden;
+}
+
+.resultado-seccion summary{
+    cursor:pointer;
+    padding:13px 15px;
+    font-weight:700;
+    background:#f8fafc;
+    list-style:none;
+}
+
+.resultado-seccion summary::-webkit-details-marker{
+    display:none;
+}
+
+.resultado-seccion summary::after{
+    content:"＋";
+    float:right;
+    font-size:18px;
+    color:#6b7280;
+}
+
+.resultado-seccion[open] summary::after{
+    content:"−";
+}
+
+.resultado-seccion .seccion-contenido{
+    padding:12px;
+}
+
+.tabla-responsive{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+}
+
+
+.resultado-controles{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:12px;
+}
+.resultado-controles button{
+    background:#f3f4f6;
+    border:1px solid #d1d5db;
+    color:#111827;
+    padding:8px 12px;
+    font-size:13px;
+}
+.resultado-controles button:hover{background:#e5e7eb;}
+.seccion-ayuda{
+    color:#6b7280;
+    font-size:13px;
+    margin-top:6px;
+}
+
+@media(max-width:600px){
+    body{padding:10px;}
+    .card{padding:12px;}
+    .resultado-resumen{grid-template-columns:1fr 1fr;}
+    .resumen-metrica .valor{font-size:19px;}
+}
+
+
+.ia-resultado{
+    margin-top:10px;
+    padding:10px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    background:#f9fafb;
+    font-size:14px;
+}
+
+.btnIA{
+    margin-top:10px;
+    background:#374151;
+    color:white;
 }
 
 .componente-resumen{
@@ -90,6 +202,432 @@ button{
 
 .componente-grupo{
     margin-bottom:15px;
+}
+
+.preguntas-componente{
+    margin-bottom:10px;
+}
+
+.preguntas-componente summary{
+    background:#f8fafc;
+}
+
+.preguntas-componente .seccion-contenido{
+    background:#fff;
+}
+
+
+/* ===== Estilo visual profesional (solo presentación) ===== */
+:root{
+    --primario:#172033;
+    --primario-2:#24324a;
+    --acento:#2563eb;
+    --fondo:#f4f6f9;
+    --superficie:#ffffff;
+    --borde:#dfe4ea;
+    --texto:#172033;
+    --muted:#667085;
+    --exito:#16803c;
+    --error:#c62828;
+    --aviso:#a15c00;
+}
+*{box-sizing:border-box;}
+html{background:var(--fondo);}
+body{
+    margin:0;
+    min-height:100vh;
+    font-family:"Segoe UI",Arial,sans-serif;
+    color:var(--texto);
+    background:
+        radial-gradient(circle at top right,rgba(37,99,235,.06),transparent 28%),
+        var(--fondo);
+    padding:28px clamp(12px,3vw,36px) 40px;
+    line-height:1.45;
+}
+body > h2{
+    max-width:1180px;
+    margin:0 auto 18px;
+    padding:4px 2px;
+    font-size:25px;
+    letter-spacing:-.3px;
+    color:var(--primario);
+}
+.card{
+    max-width:1180px;
+    margin:0 auto 16px;
+    background:rgba(255,255,255,.97);
+    padding:20px;
+    border:1px solid var(--borde);
+    border-radius:14px;
+    box-shadow:0 5px 18px rgba(16,24,40,.07);
+}
+.card h3{
+    margin:0 0 10px;
+    font-size:16px;
+    font-weight:700;
+    color:var(--primario);
+}
+select{
+    width:100%;
+    min-height:44px;
+    padding:10px 40px 10px 13px;
+    border:1px solid #cbd2dc;
+    border-radius:9px;
+    background:#fff;
+    color:#172033;
+    font-size:15px;
+    outline:none;
+    transition:border-color .15s,box-shadow .15s;
+}
+select:focus{
+    border-color:var(--acento);
+    box-shadow:0 0 0 3px rgba(37,99,235,.12);
+}
+button{
+    font-family:inherit;
+    font-size:14px;
+    font-weight:600;
+    transition:transform .12s,box-shadow .15s,background .15s;
+}
+button:hover{transform:translateY(-1px);}
+button:active{transform:translateY(0);}
+.btnCalcular{
+    background:var(--primario);
+    color:#fff;
+    padding:11px 18px;
+    box-shadow:0 3px 8px rgba(23,32,51,.18);
+}
+.btnCalcular:hover{background:var(--primario-2);}
+.resultado-resumen{gap:12px;}
+.resumen-metrica{
+    background:#f8fafc;
+    border:1px solid var(--borde);
+    border-radius:11px;
+    padding:14px;
+}
+.resumen-metrica .etiqueta{
+    color:var(--muted);
+    font-size:12px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.25px;
+}
+.resumen-metrica .valor{
+    margin-top:3px;
+    color:var(--primario);
+    font-size:23px;
+}
+.resultado-seccion{
+    border:1px solid var(--borde);
+    border-radius:12px;
+    margin-top:12px;
+    box-shadow:0 2px 7px rgba(16,24,40,.04);
+}
+.resultado-seccion summary{
+    padding:14px 16px;
+    background:#f8fafc;
+    color:var(--primario);
+    font-size:14px;
+}
+.resultado-seccion summary:hover{background:#f1f5f9;}
+.resultado-seccion .seccion-contenido{padding:15px;}
+.resultado-controles button{
+    border-radius:8px;
+    background:#fff;
+    border:1px solid #cbd2dc;
+    color:#344054;
+}
+.resultado-controles button:hover{background:#f8fafc;border-color:#98a2b3;}
+.componente-resumen{
+    background:#fbfcfe;
+    border:1px solid var(--borde);
+    border-radius:10px;
+}
+.componente-resumen h3{font-size:15px;color:var(--primario);}
+.pregunta{
+    background:#fff;
+    border:1px solid var(--borde);
+    border-radius:10px;
+    box-shadow:0 1px 3px rgba(16,24,40,.03);
+}
+.preguntas-componente summary{background:#f8fafc;}
+.ia-resultado{background:#f8fafc;border-color:var(--borde);}
+.audit-box{border-color:var(--borde);background:#fbfcfe;}
+.correcta{color:var(--exito);}
+.incorrecta{color:var(--error);}
+.check{color:var(--aviso);}
+.seccion-ayuda{color:var(--muted);}
+#resultado{font-size:16px;}
+@media(max-width:600px){
+    body{padding:16px 10px 28px;}
+    body > h2{font-size:21px;margin-bottom:12px;}
+    .card{padding:15px;border-radius:12px;}
+    .resultado-resumen{grid-template-columns:1fr;}
+    .resumen-metrica .valor{font-size:20px;}
+}
+
+
+/* Presentación final: ajustes exclusivamente visuales */
+:root{
+  --primario:#172033;
+  --primario-2:#0f172a;
+  --acento:#1d4ed8;
+  --fondo:#f5f7fa;
+  --superficie:#ffffff;
+  --borde:#d9dee7;
+  --texto:#1f2937;
+  --muted:#667085;
+  --exito:#16794a;
+  --error:#b42318;
+  --aviso:#9a6700;
+}
+html{background:var(--fondo);}
+body{
+  font-family:"Segoe UI",Arial,Helvetica,sans-serif;
+  color:var(--texto);
+  background:var(--fondo);
+  padding:30px 24px 48px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+body > h2{
+  max-width:1180px;
+  margin:0 auto 20px;
+  padding:0 2px;
+  color:var(--primario-2);
+  font-size:25px;
+  font-weight:700;
+  letter-spacing:-.25px;
+}
+.card{
+  max-width:1180px;
+  margin:0 auto 16px;
+  padding:20px 22px;
+  background:var(--superficie);
+  border:1px solid var(--borde);
+  border-radius:12px;
+  box-shadow:0 2px 8px rgba(16,24,40,.05);
+}
+.card h3{
+  margin:0 0 11px;
+  color:var(--primario-2);
+  font-size:16px;
+  font-weight:650;
+}
+select{
+  min-height:44px;
+  padding:10px 38px 10px 13px;
+  border:1px solid #c8ced8;
+  border-radius:8px;
+  background:#fff;
+  color:var(--texto);
+  font-size:15px;
+  outline:none;
+  box-shadow:0 1px 2px rgba(16,24,40,.03);
+  transition:border-color .15s ease,box-shadow .15s ease;
+}
+select:hover{border-color:#aeb7c5;}
+select:focus{
+  border-color:var(--acento);
+  box-shadow:0 0 0 3px rgba(29,78,216,.10);
+}
+button{
+  font-family:inherit;
+  font-weight:600;
+  letter-spacing:0;
+  transition:background .15s ease,border-color .15s ease,box-shadow .15s ease,transform .08s ease;
+}
+button:hover{transform:translateY(-1px);}
+button:active{transform:none;}
+.btnCalcular{
+  padding:11px 18px;
+  border:1px solid var(--primario-2);
+  border-radius:8px;
+  background:var(--primario-2);
+  color:#fff;
+  box-shadow:0 2px 5px rgba(15,23,42,.16);
+}
+.btnCalcular:hover{background:#1e293b;}
+.resultado-resumen{
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:10px;
+  margin-top:14px;
+}
+.resumen-metrica{
+  min-height:82px;
+  padding:13px 14px;
+  background:#fbfcfe;
+  border:1px solid var(--borde);
+  border-radius:9px;
+}
+.resumen-metrica .etiqueta{
+  color:var(--muted);
+  font-size:11px;
+  font-weight:650;
+  letter-spacing:.35px;
+  text-transform:uppercase;
+}
+.resumen-metrica .valor{
+  margin-top:4px;
+  color:var(--primario-2);
+  font-size:22px;
+  line-height:1.2;
+}
+.resultado-seccion{
+  margin-top:11px;
+  border:1px solid var(--borde);
+  border-radius:10px;
+  background:#fff;
+  box-shadow:0 1px 4px rgba(16,24,40,.035);
+}
+.resultado-seccion summary{
+  padding:13px 15px;
+  background:#f8fafc;
+  color:var(--primario-2);
+  font-size:14px;
+  font-weight:650;
+}
+.resultado-seccion summary:hover{background:#f3f5f8;}
+.resultado-seccion .seccion-contenido{padding:14px 15px;}
+.resultado-controles{gap:7px;}
+.resultado-controles button{
+  padding:8px 12px;
+  border:1px solid #cbd2dc;
+  border-radius:7px;
+  background:#fff;
+  color:#344054;
+  font-size:13px;
+}
+.resultado-controles button:hover{background:#f8fafc;border-color:#98a2b3;}
+.componente-resumen{
+  margin:10px 0 14px;
+  padding:13px;
+  background:#fbfcfe;
+  border:1px solid var(--borde);
+  border-radius:9px;
+}
+.componente-resumen h3{margin:0 0 8px;color:var(--primario-2);font-size:15px;}
+.componente-grupo{margin-bottom:14px;}
+.pregunta{
+  margin-bottom:9px;
+  padding:14px;
+  background:#fff;
+  border:1px solid var(--borde);
+  border-radius:9px;
+  box-shadow:none;
+}
+.preguntas-componente{margin-bottom:9px;}
+.preguntas-componente summary{background:#f8fafc;}
+.preguntas-componente .seccion-contenido{background:#fff;}
+.tabla-responsive{border-radius:8px;}
+.audit-box{background:#fbfcfe;border-color:var(--borde);}
+.ia-resultado{background:#f8fafc;border-color:var(--borde);}
+.btnIA{border-radius:8px;}
+.correcta{color:var(--exito);}
+.incorrecta{color:var(--error);}
+.check{color:var(--aviso);}
+.seccion-ayuda{color:var(--muted);}
+#resultado{font-size:16px;}
+@media(max-width:700px){
+  body{padding:16px 10px 30px;}
+  body > h2{font-size:21px;margin-bottom:14px;}
+  .card{padding:15px;border-radius:10px;}
+  .resultado-resumen{grid-template-columns:1fr;}
+  .resultado-seccion summary{padding:12px 13px;}
+  .resultado-seccion .seccion-contenido{padding:12px;}
+  .resumen-metrica .valor{font-size:20px;}
+}
+
+
+/* ===== Visualización de áreas de mejora ===== */
+.grafica-mejora{
+    margin-top:14px;
+    padding:16px;
+    border:1px solid var(--borde);
+    border-radius:10px;
+    background:#fff;
+}
+.grafica-mejora-titulo{
+    margin:0 0 4px;
+    color:var(--primario-2);
+    font-size:15px;
+    font-weight:700;
+}
+.grafica-mejora-subtitulo{
+    margin:0 0 14px;
+    color:var(--muted);
+    font-size:13px;
+}
+.grafica-mejora-contenido{
+    display:grid;
+    grid-template-columns:minmax(190px,240px) 1fr;
+    gap:22px;
+    align-items:center;
+}
+.grafica-pastel{
+    width:210px;
+    height:210px;
+    margin:auto;
+    border-radius:50%;
+    position:relative;
+    display:grid;
+    place-items:center;
+    box-shadow:inset 0 0 0 1px rgba(16,24,40,.08);
+}
+.grafica-pastel::after{
+    content:"";
+    width:108px;
+    height:108px;
+    border-radius:50%;
+    background:#fff;
+    box-shadow:0 1px 5px rgba(16,24,40,.08);
+}
+.grafica-centro{
+    position:absolute;
+    z-index:2;
+    text-align:center;
+    color:var(--primario-2);
+    line-height:1.15;
+}
+.grafica-centro strong{
+    display:block;
+    font-size:25px;
+}
+.grafica-centro span{
+    display:block;
+    margin-top:3px;
+    color:var(--muted);
+    font-size:11px;
+}
+.grafica-leyenda{
+    display:grid;
+    gap:8px;
+}
+.grafica-leyenda-item{
+    display:grid;
+    grid-template-columns:12px minmax(0,1fr) auto;
+    gap:8px;
+    align-items:center;
+    font-size:13px;
+}
+.grafica-punto{
+    width:10px;
+    height:10px;
+    border-radius:50%;
+}
+.grafica-leyenda-nombre{
+    min-width:0;
+    overflow-wrap:anywhere;
+}
+.grafica-leyenda-valor{
+    font-weight:700;
+    color:var(--primario-2);
+    white-space:nowrap;
+}
+@media(max-width:700px){
+    .grafica-mejora-contenido{grid-template-columns:1fr;}
+    .grafica-pastel{width:190px;height:190px;}
+    .grafica-pastel::after{width:98px;height:98px;}
 }
 
 </style>
@@ -110,7 +648,7 @@ button{
     <h3>Intento</h3>
 
     <select id="selectIntento">
-        <option>Seleccione un técnico</option>
+        <option value="">Seleccione un intento</option>
     </select>
 </div>
 
@@ -126,6 +664,9 @@ button{
 
 <script>
 
+// =====================================
+// SUPABASE
+// =====================================
 
 const supabaseUrl = "https://gogalvnmpntvjtiunowz.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvZ2Fsdm5tcG50dmp0aXVub3d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyNzM5MzcsImV4cCI6MjA4Nzg0OTkzN30.wOZbM_s2F-FjdrXqUz6lvRnOYAPuTYlGhwcP3hzbYTw";
@@ -136,11 +677,18 @@ supabase.createClient(
     supabaseKey
 );
 
-
+// =====================================
 
 let datosActuales = [];
+let datosPTActual = [];
 
+// =====================================
+// CARGAR USUARIOS
+// =====================================
 
+// =====================================
+// CARGAR USUARIOS
+// =====================================
 const STOPWORDS = new Set([
     "de","la","el","en","y","a","los","las","un","una",
     "que","es","se","por","para","con","del","al"
@@ -156,7 +704,11 @@ function normalizar(texto){
         .replace(/\s+/g," ");
 }
 
-
+// =====================================
+// FECHA ROBUSTA
+// Acepta fechas ISO y fechas guardadas como
+// YYYY-M-D HH:mm / YYYY-MM-DD HH:mm sin zona horaria.
+// =====================================
 function parseFechaRobusta(valor){
     if(valor instanceof Date){
         return isNaN(valor.getTime()) ? null : valor;
@@ -166,7 +718,8 @@ function parseFechaRobusta(valor){
 
     const texto = String(valor).trim();
 
-
+    // Formato sin zona horaria: YYYY-M-D HH:mm[:ss]
+    // Se interpreta en la zona horaria local del equipo.
     const m = texto.match(/^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?$/);
     if(m){
         const anio = Number(m[1]);
@@ -189,7 +742,7 @@ function parseFechaRobusta(valor){
         return null;
     }
 
-    
+    // ISO con Z o desplazamiento horario.
     const fecha = new Date(texto);
     return isNaN(fecha.getTime()) ? null : fecha;
 }
@@ -221,12 +774,12 @@ function expandirSiglas(texto){
 
     let t = texto.toLowerCase();
 
-    
+    // detecta siglas tipo SMM, VFD, PLC
     const siglas = t.match(/\b[a-z]{2,10}\b/gi) || [];
 
     siglas.forEach(sigla => {
 
-        
+        // intenta expandir por contexto (heurística)
         const expansion = heuristicaSigla(sigla);
 
         if(expansion){
@@ -280,13 +833,16 @@ function respuestaIA(usuario, correcta){
 
     if(!usuario || !correcta) return 0;
 
-    
+    // Exactamente iguales
     if(usuario === correcta) return 1;
 
-
+    // Si una respuesta contiene completamente a la otra,
+    // se considera correcta.
     if(usuario.includes(correcta) || correcta.includes(usuario)) return 1;
 
-
+    // Comparación por palabras:
+    // la coincidencia mínima de UNA palabra significativa
+    // ya es suficiente para marcar como correcta.
     const palabrasUsuario = usuario
         .split(/\s+/)
         .filter(w => w.length > 2 && !STOPWORDS.has(w));
@@ -309,7 +865,7 @@ function respuestaIA(usuario, correcta){
         }
     }
 
-
+    // No hubo ni siquiera una coincidencia mínima.
     return 0;
 }
 async function cargarUsuarios() {
@@ -393,6 +949,12 @@ async function cargarUsuarios() {
         console.log("Usuarios únicos:", usuarios.length);
         console.table(usuarios);
 
+        // Si el navegador restauró un técnico seleccionado previamente,
+        // cargar sus intentos automáticamente.
+        if (select.value) {
+            await cargarIntentos();
+        }
+
     } catch (err) {
 
         console.error(err);
@@ -403,7 +965,9 @@ async function cargarUsuarios() {
 }
 
 
-
+// =====================================
+// CARGAR INTENTOS
+// =====================================
 
 async function cargarIntentos() {
 
@@ -415,12 +979,17 @@ async function cargarIntentos() {
     const select =
     document.getElementById("selectIntento");
 
-    document.getElementById("contenedorPreguntas").innerHTML = "";
+    const contenedor =
+    document.getElementById("contenedorPreguntas");
+
+    contenedor.innerHTML = "";
 
     if (!usuario) {
-        select.innerHTML = "<option>Seleccione técnico</option>";
+        select.innerHTML = "<option value=''>Seleccione un técnico</option>";
         return;
     }
+
+    select.innerHTML = "<option value=''>Cargando intentos...</option>";
 
     try {
 
@@ -432,38 +1001,66 @@ async function cargarIntentos() {
 
         if (error) throw error;
 
-        console.log("Total filas usuario:", data.length);
+        const intentosMap = new Map();
 
+        (data || []).forEach(row => {
+            const formato = formatoFechaMinuto(row.fecha);
 
-        const minutos = data.map(x => {
+            // Si una fecha no puede interpretarse, no se crea un intento vacío.
+            if (!formato) return;
 
-            const formato = formatoFechaMinuto(x.fecha);
-
-            return formato;
-
+            if (!intentosMap.has(formato)) {
+                intentosMap.set(formato, row.fecha);
+            }
         });
 
-        const fechasUnicas = [...new Set(minutos)];
-
-        console.log("Intentos reales:", fechasUnicas);
+        const fechasUnicas = [...intentosMap.keys()].sort((a,b) => {
+            const da = parseFechaRobusta(a);
+            const db = parseFechaRobusta(b);
+            return (db?.getTime() || 0) - (da?.getTime() || 0);
+        });
 
         select.innerHTML =
-        "<option value=''>Seleccione intento</option>";
+        "<option value=''>Seleccione un intento</option>";
 
         fechasUnicas.forEach(f => {
-
             const option = document.createElement("option");
             option.value = f;
             option.textContent = f;
-
             select.appendChild(option);
         });
 
+        if (fechasUnicas.length === 0) {
+            select.innerHTML =
+            "<option value=''>No hay intentos disponibles</option>";
+            return;
+        }
+
+        // Si solo existe un intento, se selecciona automáticamente.
+        // Si el navegador restauró una selección previa, también se respeta.
+        const valorRestaurado = select.value;
+        if (valorRestaurado && fechasUnicas.includes(valorRestaurado)) {
+            select.value = valorRestaurado;
+            cargarPreguntas();
+        } else if (fechasUnicas.length === 1) {
+            select.value = fechasUnicas[0];
+            cargarPreguntas();
+        }
+
+        console.log("Intentos reales:", fechasUnicas);
+
     } catch (err) {
-        console.error(err);
+        console.error("Error al cargar intentos:", err);
+        select.innerHTML =
+        "<option value=''>Error al cargar intentos</option>";
+        contenedor.innerHTML =
+        "<div class='card'>No fue posible cargar los intentos de este técnico. Revisa la consola para más detalle.</div>";
     }
 }
 
+// =====================================
+// CARGAR PREGUNTAS
+// =====================================
 
 async function cargarPreguntas(){
 
@@ -485,6 +1082,9 @@ async function cargarPreguntas(){
 
     try{
 
+        // ====================================
+        // RESPUESTAS DEL USUARIO
+        // ====================================
 
         const { data: respuestasUsuario, error: err1 } =
         await supabaseClient
@@ -494,11 +1094,36 @@ async function cargarPreguntas(){
 
         if(err1) throw err1;
 
-
+        // ====================================
+        // FILTRAR INTENTO
+        // Se hace antes de consultar las tablas auxiliares para que
+        // un problema en la información de componentes no impida
+        // cargar una evaluación que ya existe.
+        // ====================================
 
         datosActuales = respuestasUsuario.filter(x => {
             const formato = formatoFechaMinuto(x.fecha);
             return formato === intento;
+        });
+
+        // Evitar mostrar la misma pregunta más de una vez en el mismo intento.
+        // Se conserva únicamente la primera respuesta registrada para cada
+        // pregunta normalizada. El resto del código y la información original
+        // permanecen sin cambios.
+        const preguntasVistas = new Set();
+        datosActuales = datosActuales.filter(item => {
+            const clavePregunta = normalizar(item.pregunta || "");
+
+            if(!clavePregunta){
+                return true;
+            }
+
+            if(preguntasVistas.has(clavePregunta)){
+                return false;
+            }
+
+            preguntasVistas.add(clavePregunta);
+            return true;
         });
 
         if(datosActuales.length === 0){
@@ -507,7 +1132,12 @@ async function cargarPreguntas(){
             return;
         }
 
-
+        // ====================================
+        // TABLA TEST_VAL
+        // Pregunta -> Codigo
+        // Esta es la tabla de donde el test
+        // obtiene realmente las preguntas.
+        // ====================================
 
         let bancoTest = [];
         try {
@@ -523,14 +1153,17 @@ async function cargarPreguntas(){
             bancoTest = [];
         }
 
+        // ====================================
+        // TABLA PTACTUAL
+        // Codigo RH -> Componente + Puntaje de actividad
+        // ====================================
 
-
-        let datosPTActual = [];
+        datosPTActual = [];
         try {
             const { data, error } =
             await supabaseClient
             .from("PTACTUAL")
-            .select('"Codigo RH", Componente, "Puntaje de actividad"');
+            .select("*");
 
             if(error) throw error;
             datosPTActual = data || [];
@@ -552,12 +1185,15 @@ async function cargarPreguntas(){
 
                 mapaComponentes[codigo] = {
                     componente: registro.Componente || "Sin componente",
-                    puntaje: Number.isFinite(valorPuntaje) ? valorPuntaje : 0
+                    puntaje: Number.isFinite(valorPuntaje) ? valorPuntaje : 0,
+                    descripcionTarea: registro["Descripcion de Tarea"] || ""
                 };
             }
         });
 
-
+        // Pregunta utilizada en el test -> Codigo real de Test_val.
+        // La relación se realiza directamente con Test_val para
+        // determinar pregunta y Codigo.
         const mapaPreguntaCodigo = {};
 
         (bancoTest || []).forEach(registro => {
@@ -578,9 +1214,17 @@ async function cargarPreguntas(){
         let html = `
         <div class="card">
             <h3>Resultado Evaluación</h3>
+            <button type="button" class="btnIA" onclick="analizarEvaluacionConIA()">Analizar respuestas</button>
         `;
 
-
+        // ====================================
+        // AGRUPAR POR COMPONENTE
+        //
+        // 1. Se busca la pregunta en Test_val.
+        // 2. De esa pregunta se obtiene Codigo.
+        // 3. Ese Codigo se compara con Codigo RH de PTACTUAL.
+        // 4. De PTACTUAL se obtiene Componente.
+        // ====================================
 
         const gruposComponentes = {};
         const ordenComponentes = [];
@@ -593,18 +1237,21 @@ async function cargarPreguntas(){
             const respuestaUsuario =
             normalizar(item.respuesta);
 
-
+            // Buscar la pregunta directamente en Test_val para
+            // obtener Codigo y respuesta correcta.
             const coincidencias =
             bancoTest.filter(q =>
                 normalizar(q.Preguntas) === preguntaUsuario
             );
 
-
+            // El código para el COMPONENTE se obtiene de Test_val,
+            // porque esa es la tabla que realmente alimenta el test.
             const codigosTest = mapaPreguntaCodigo[preguntaUsuario] || [];
 
             let preguntaEncontrada = null;
 
-
+            // Si el registro de resultados ya trae un código,
+            // se respeta ese código para identificar la pregunta.
             const codigoDirecto = String(
                 item.Codigo ||
                 item.codigo ||
@@ -619,12 +1266,15 @@ async function cargarPreguntas(){
                 ) || null;
             }
 
-
+            // Si no hay código directo y solo existe una coincidencia,
+            // esa es la pregunta correspondiente.
             if(!preguntaEncontrada && coincidencias.length === 1){
                 preguntaEncontrada = coincidencias[0];
             }
 
-
+            // Si la pregunta aparece varias veces en el banco,
+            // se intenta identificar el registro correcto comparando
+            // la respuesta del usuario contra las respuestas correctas.
             if(!preguntaEncontrada && coincidencias.length > 1){
 
                 let mejor = null;
@@ -659,7 +1309,9 @@ async function cargarPreguntas(){
             let codigoPregunta = "";
             let componentePregunta = "Sin componente";
 
-
+            // ==============================
+            // PREGUNTA NO EXISTE
+            // ==============================
 
             if(!preguntaEncontrada){
 
@@ -669,14 +1321,29 @@ async function cargarPreguntas(){
                 item.estadoIA = "check";
             }
 
-
+            // ==============================
+            // COMPARAR RESPUESTA
+            // ==============================
 
             else{
 
                 respuestaCorrecta =
                 preguntaEncontrada.Respuestas || "";
 
+                // Datos que usará exclusivamente la evaluación con IA.
+                item.preguntaIA = item.pregunta || "";
+                item.respuestaCorrectaIA = respuestaCorrecta;
 
+                // ESTE ES EL VÍNCULO CORRECTO PARA EL TEST:
+                // Test_val.Preguntas
+                //       ↓
+                // Test_val.Codigo
+                //       ↓
+                // PTACTUAL.Codigo RH
+                //       ↓
+                // PTACTUAL.Componente
+                //
+                // Test_val se usa para la pregunta, Codigo y respuesta correcta.
                 if(codigosTest.length === 1){
                     codigoPregunta = codigosTest[0];
                     const infoComponente =
@@ -689,9 +1356,14 @@ async function cargarPreguntas(){
                     item.puntajeActividad = infoComponente
                         ? infoComponente.puntaje
                         : 0;
+
+                    item.descripcionTarea = infoComponente
+                        ? infoComponente.descripcionTarea
+                        : "";
                 }
                 else if(codigosTest.length > 1){
-
+                    // Si el mismo texto existe con varios códigos en Test_val,
+                    // no se asigna un componente arbitrario.
                     codigoPregunta = codigosTest.join(", ");
                     componentePregunta = "Sin componente (código ambiguo)";
                     item.puntajeActividad = 0;
@@ -738,7 +1410,9 @@ async function cargarPreguntas(){
             });
         });
 
-
+        // ====================================
+        // MOSTRAR AGRUPADAS POR COMPONENTE
+        // ====================================
 
         ordenComponentes.forEach(componente => {
 
@@ -754,11 +1428,9 @@ async function cargarPreguntas(){
             });
 
             html += `
-                <div class="componente-grupo">
-                    <div class="componente-resumen">
-                        <h3>${componente}</h3>
-                        <b>Buenas: ${buenas} de ${preguntasComponente.length}</b>
-                    </div>
+                <details class="resultado-seccion preguntas-componente">
+                    <summary>${componente} — ${buenas} buenas de ${preguntasComponente.length}</summary>
+                    <div class="seccion-contenido">
             `;
 
             preguntasComponente.forEach(registro => {
@@ -788,6 +1460,8 @@ async function cargarPreguntas(){
                         ${respuestaCorrecta || "No encontrada"}
                     </div>
 
+                    <div id="ia_resultado_${index}" class="ia-resultado">Análisis: pendiente</div>
+
                     <br>
 
                     <div>
@@ -816,7 +1490,7 @@ async function cargarPreguntas(){
                 `;
             });
 
-            html += `</div>`;
+            html += `</div></details>`;
         });
 
         html += "</div>";
@@ -889,7 +1563,10 @@ function levenshtein(a, b){
 
     return matrix[a.length][b.length];
 }
-
+// Compatibilidad con la rutina de comparación de respuestas.
+// La función respuestaSimilar puede utilizar similitudInteligente cuando
+// una misma pregunta aparece más de una vez. Se mantiene la lógica existente
+// usando la similitud por palabras ya definida en similitudIA.
 function similitudInteligente(a, b){
     return similitudIA(a, b);
 }
@@ -908,14 +1585,223 @@ function respuestaSimilar(a, b){
 
     const sim = similitudInteligente(a, b);
 
-
+    // 🔥 BONUS SEMÁNTICO:
+    // si comparte al menos 1 palabra importante → ya cuenta
     if(sim > 0 && sim < 0.2){
         return 0.5;
     }
 
     return sim;
 }
+// =====================================
+// EVALUACIÓN CON IA
+// La IA analiza el significado de la respuesta del técnico
+// contra la respuesta de referencia de Test_val.
+// No se cambia ninguna otra lógica del cálculo existente.
+// =====================================
+async function evaluarRespuestaConIA(pregunta, respuestaCorrecta, respuestaUsuario){
 
+    const endpointIA = `${supabaseUrl}/functions/v1/evaluar-respuesta-ia`;
+
+    const respuesta = await fetch(endpointIA, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${supabaseKey}`
+        },
+        body: JSON.stringify({
+            pregunta,
+            respuesta_correcta: respuestaCorrecta,
+            respuesta_usuario: respuestaUsuario
+        })
+    });
+
+    const datos = await respuesta.json();
+
+    if(!respuesta.ok){
+        throw new Error(datos?.error || "No fue posible consultar la IA");
+    }
+
+    return datos;
+}
+
+async function analizarEvaluacionConIA(){
+    const boton = document.querySelector(".btnIA");
+
+    if(!datosActuales || datosActuales.length === 0){
+        alert("No hay preguntas para analizar.");
+        return;
+    }
+
+    if(boton){
+        boton.disabled = true;
+        boton.textContent = "Analizando respuestas...";
+    }
+
+    let correctas = 0;
+    let incorrectas = 0;
+    let revisar = 0;
+
+    try{
+        // Procesar una pregunta a la vez para respetar el límite RPM de OpenAI.
+        for(let i = 0; i < datosActuales.length; i++){
+
+            const item = datosActuales[i];
+            const panel = document.getElementById(`ia_resultado_${i}`);
+
+            if(panel){
+                panel.innerHTML =
+                    `Analizando ${i + 1} de ${datosActuales.length}...`;
+            }
+
+            const pregunta = item.preguntaIA || item.pregunta || "";
+            const respuestaCorrecta = item.respuestaCorrectaIA || "";
+            const respuestaUsuario = item.respuesta || "";
+
+            let datosIA = null;
+            let ultimoError = null;
+
+            // Reintentar automáticamente si se alcanza el rate limit.
+            for(let intento = 1; intento <= 4; intento++){
+                try{
+                    datosIA = await evaluarRespuestaConIA(
+                        pregunta,
+                        respuestaCorrecta,
+                        respuestaUsuario
+                    );
+                    ultimoError = null;
+                    break;
+                }
+                catch(errorPregunta){
+                    ultimoError = errorPregunta;
+
+                    const mensaje = String(
+                        errorPregunta?.message || ""
+                    ).toLowerCase();
+
+                    const esRateLimit =
+                        mensaje.includes("rate limit") ||
+                        mensaje.includes("too many requests") ||
+                        mensaje.includes("requests per min") ||
+                        mensaje.includes("rpm") ||
+                        mensaje.includes("429");
+
+                    if(!esRateLimit || intento === 4){
+                        break;
+                    }
+
+                    const espera =
+                        intento === 1 ? 7000 :
+                        intento === 2 ? 9000 :
+                        12000;
+
+                    if(panel){
+                        panel.innerHTML =
+                            `Límite de análisis alcanzado.<br>` +
+                            `Esperando ${Math.round(espera / 1000)} segundos...`;
+                    }
+
+                    await new Promise(resolve =>
+                        setTimeout(resolve, espera)
+                    );
+                }
+            }
+
+            if(!datosIA){
+                if(panel){
+                    panel.innerHTML =
+                        `Análisis no disponible para esta pregunta<br>` +
+                        `${ultimoError?.message || "Error al consultar la IA"}`;
+                }
+                continue;
+            }
+
+            const decision = String(datosIA.decision || "").toLowerCase();
+            const confianza =
+                datosIA.confianza !== undefined ? datosIA.confianza : "";
+            const motivo =
+                datosIA.motivo || "Sin explicación proporcionada.";
+
+            if(decision === "correcta"){
+                item.estadoIA = "correcta";
+                correctas++;
+            }else if(decision === "incorrecta"){
+                item.estadoIA = "incorrecta";
+                incorrectas++;
+            }else{
+                item.estadoIA = "revisar";
+                revisar++;
+            }
+
+            const radioCorrecta =
+                document.querySelector(
+                    `input[name="val_${i}"][value="correcta"]`
+                );
+            const radioIncorrecta =
+                document.querySelector(
+                    `input[name="val_${i}"][value="incorrecta"]`
+                );
+
+            if(decision === "correcta" && radioCorrecta){
+                radioCorrecta.checked = true;
+            }else if(decision === "incorrecta" && radioIncorrecta){
+                radioIncorrecta.checked = true;
+            }
+
+            if(panel){
+                let icono = "🟡";
+                let texto = "Revisar";
+
+                if(decision === "correcta"){
+                    icono = "🟢";
+                    texto = "Correcta";
+                }else if(decision === "incorrecta"){
+                    icono = "🔴";
+                    texto = "Incorrecta";
+                }
+
+                panel.innerHTML =
+                    `${icono} <b>IA: ${texto}</b>` +
+                    (confianza !== "" ? `<br>Confianza: ${confianza}%` : "") +
+                    `<br>${motivo}`;
+            }
+
+            // Pausa entre preguntas para evitar ráfagas de solicitudes.
+            if(i < datosActuales.length - 1){
+                await new Promise(resolve =>
+                    setTimeout(resolve, 6500)
+                );
+            }
+        }
+
+        if(typeof calcularResultado === "function"){
+            await calcularResultado();
+        }
+
+        alert(
+            `Análisis terminado.\n\n` +
+            `Correctas: ${correctas}\n` +
+            `Incorrectas: ${incorrectas}\n` +
+            `Revisar: ${revisar}`
+        );
+
+    }catch(error){
+        console.error("Error general al analizar con IA:", error);
+        alert(
+            "El análisis con IA se detuvo: " +
+            (error?.message || "error desconocido")
+        );
+    }finally{
+        if(boton){
+            boton.disabled = false;
+            boton.textContent = "Analizar respuestas";
+        }
+    }
+}
+
+// =====================================
+// CALCULAR RESULTADO
+// =====================================
 
 async function calcularResultado(){
 
@@ -947,7 +1833,17 @@ async function calcularResultado(){
         ? ((correctas / total) * 100).toFixed(1)
         : 0;
 
-
+    // =====================================
+    // CALIFICACION POR COMPONENTE
+    //
+    // Para cada pregunta se usa su Codigo real de Test_val,
+    // se busca en PTACTUAL.Codigo RH y se toma: Componente +
+    // Puntaje de actividad.
+    // Si el componente obtiene 60% o más, recibe los puntos que
+    // corresponden a las actividades de ese componente.
+    // Se cuentan los codigos una sola vez para no duplicar
+    // puntos cuando un mismo codigo tiene varias preguntas.
+    // =====================================
 
     const resumenComponentes = {};
     const ordenResumen = [];
@@ -966,7 +1862,8 @@ async function calcularResultado(){
             resumenComponentes[componente] = {
                 buenas: 0,
                 total: 0,
-                actividades: {}
+                actividades: {},
+                descripciones: {}
             };
             ordenResumen.push(componente);
         }
@@ -981,9 +1878,15 @@ async function calcularResultado(){
         const codigo = String(item.codigoPregunta || "").trim();
         const puntaje = Number(item.puntajeActividad || 0);
 
-
+        // Un mismo codigo puede tener varias preguntas.
+        // El puntaje de esa actividad se considera una sola vez.
         if(codigo && puntaje > 0 && !codigo.includes(",")){
             grupo.actividades[codigo] = puntaje;
+        }
+
+        const descripcion = String(item.descripcionTarea || "").trim();
+        if(descripcion && codigo && !codigo.includes(",")){
+            grupo.descripciones[codigo] = descripcion;
         }
     });
 
@@ -991,7 +1894,9 @@ async function calcularResultado(){
     let puntajeTotalObtenido = 0;
     let htmlComponentes = `
         <div class="card">
-            <h3>Calificación por componente</h3>
+            <details class="resultado-seccion">
+                <summary>Calificación por componente</summary>
+                <div class="seccion-contenido">
             <table style="width:100%;border-collapse:collapse;">
                 <thead>
                     <tr>
@@ -1017,7 +1922,7 @@ async function calcularResultado(){
                 .reduce((suma, valor) => suma + Number(valor || 0), 0);
 
         const puntosObtenidos =
-            porcentajeComponente >= 50
+            porcentajeComponente >= 60
                 ? puntosComponente
                 : 0;
 
@@ -1034,12 +1939,359 @@ async function calcularResultado(){
         `;
     });
 
+    let htmlTareasMenos60 = "";
+    let puntosAdicionalesMenos60 = 0;
+    const datosGraficaMejora = [];
+
+    // Para componentes menores al 60%, mostrar SOLAMENTE las actividades
+    // (Codigo RH) en las que el tecnico tuvo alguna respuesta incorrecta
+    // o dejo alguna pregunta sin completar.
+    // Una actividad cuenta como pendiente si NO todas sus preguntas fueron correctas.
+    const actividadEvaluacion = {};
+
+    datosActuales.forEach((item, index) => {
+        const codigo = String(item.codigoPregunta || "").trim();
+        const componente = String(item.componente || "Sin componente").trim();
+        if(!codigo || codigo.includes(",")) return;
+
+        const seleccion = document.querySelector(`input[name="val_${index}"]:checked`);
+        const esCorrecta = !!seleccion && seleccion.value === "correcta";
+
+        if(!actividadEvaluacion[codigo]){
+            actividadEvaluacion[codigo] = {
+                componente,
+                totalPreguntas: 0,
+                correctas: 0
+            };
+        }
+
+        actividadEvaluacion[codigo].totalPreguntas++;
+        if(esCorrecta){
+            actividadEvaluacion[codigo].correctas++;
+        }
+    });
+
+    // Buscar el puntaje de cada actividad directamente en PTACTUAL.
+    const puntosPorCodigoPT = {};
+    (datosPTActual || []).forEach(registro => {
+        const codigo = String(registro["Codigo RH"] || "").trim();
+        const componente = String(registro.Componente || "Sin componente").trim();
+        const puntaje = Number(
+            String(registro["Puntaje de actividad"] ?? "").replace(",", ".")
+        );
+
+        if(!codigo || !componente || !Number.isFinite(puntaje)) return;
+
+        puntosPorCodigoPT[codigo] = { componente, puntaje };
+    });
+
+    ordenResumen.forEach(componente => {
+        const grupo = resumenComponentes[componente];
+        const porcentajeComponente =
+            grupo.total > 0
+                ? (grupo.buenas / grupo.total) * 100
+                : 0;
+
+        if(porcentajeComponente >= 60) return;
+
+        const actividadesPendientes = [];
+
+        Object.entries(actividadEvaluacion).forEach(([codigo, actividad]) => {
+            if(actividad.componente !== componente) return;
+
+            // La actividad requiere MEJORA si tuvo al menos una respuesta incorrecta
+            // o si no todas sus preguntas fueron contestadas correctamente.
+            if(actividad.correctas < actividad.totalPreguntas){
+                const infoPT = puntosPorCodigoPT[codigo];
+                if(infoPT){
+                    const registroPT = (datosPTActual || []).find(r =>
+                        String(r["Codigo RH"] || "").trim() === codigo
+                    );
+                    const descripcion = String(
+                        registroPT?.["Descripcion de Tarea"] || ""
+                    ).trim();
+
+                    actividadesPendientes.push({
+                        codigo,
+                        puntaje: infoPT.puntaje,
+                        descripcion,
+                        preguntas: actividad.totalPreguntas,
+                        correctas: actividad.correctas
+                    });
+                }
+            }
+        });
+
+        if(actividadesPendientes.length > 0){
+            const puntosFaltantesComponente = actividadesPendientes.reduce(
+                (suma, actividad) => suma + Number(actividad.puntaje || 0),
+                0
+            );
+
+            puntosAdicionalesMenos60 += puntosFaltantesComponente;
+            datosGraficaMejora.push({
+                componente,
+                puntos: puntosFaltantesComponente,
+                actividades: actividadesPendientes.length
+            });
+
+            htmlTareasMenos60 += `
+                <details style="margin-top:8px;border:1px solid #ddd;border-radius:8px;background:#fff;">
+                    <summary style="cursor:pointer;padding:10px;font-weight:700;list-style:none;">
+                        ${componente} — ${porcentajeComponente.toFixed(1)}%
+                        <span style="float:right;">${puntosFaltantesComponente} puntos a mejorar</span>
+                    </summary>
+                    <div style="padding:0 10px 10px;">
+                        ${actividadesPendientes.map(a => `
+                            <div style="margin-top:8px;padding:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:7px;">
+                                <b>Mejorar: ${a.descripcion || "Actividad sin descripción"}</b>
+                                <div style="font-size:12px;color:#666;margin-top:3px;">
+                                    Código RH: ${a.codigo} · Preguntas correctas: ${a.correctas}/${a.preguntas} · Valor: ${a.puntaje} puntos
+                                </div>
+                            </div>
+                        `).join("")}
+                    </div>
+                </details>
+            `;
+        }
+    });
+
+    let htmlGraficaMejora = "";
+    if(datosGraficaMejora.length > 0){
+        const totalGrafica = datosGraficaMejora.reduce(
+            (suma, dato) => suma + Number(dato.puntos || 0),
+            0
+        );
+
+        const coloresGrafica = [
+            "#1d4ed8","#0f766e","#7c3aed","#b45309",
+            "#be123c","#475569","#047857","#6d28d9"
+        ];
+
+        let acumulado = 0;
+        const segmentos = datosGraficaMejora.map((dato, indice) => {
+            const inicio = totalGrafica > 0
+                ? (acumulado / totalGrafica) * 100
+                : 0;
+            acumulado += Number(dato.puntos || 0);
+            const fin = totalGrafica > 0
+                ? (acumulado / totalGrafica) * 100
+                : 0;
+            const color = coloresGrafica[indice % coloresGrafica.length];
+            return { ...dato, color, inicio, fin };
+        });
+
+        const fondoPastel = segmentos
+            .map(segmento => `${segmento.color} ${segmento.inicio.toFixed(2)}% ${segmento.fin.toFixed(2)}%`)
+            .join(", ");
+
+        htmlGraficaMejora = `
+            <div class="grafica-mejora">
+                <div class="grafica-mejora-titulo">Distribución de puntos por mejorar</div>
+                <div class="grafica-mejora-subtitulo">
+                    La gráfica muestra qué porcentaje de los puntos pendientes corresponde a cada componente.
+                </div>
+                <div class="grafica-mejora-contenido">
+                    <div class="grafica-pastel" style="background:conic-gradient(${fondoPastel});">
+                        <div class="grafica-centro">
+                            <strong>${totalGrafica}</strong>
+                            <span>puntos por mejorar</span>
+                        </div>
+                    </div>
+                    <div class="grafica-leyenda">
+                        ${segmentos.map(segmento => `
+                            <div class="grafica-leyenda-item">
+                                <span class="grafica-punto" style="background:${segmento.color};"></span>
+                                <span class="grafica-leyenda-nombre">
+                                    ${segmento.componente}
+                                    <span style="display:block;color:#667085;font-size:11px;">
+                                        ${segmento.actividades} actividad${segmento.actividades === 1 ? "" : "es"}
+                                    </span>
+                                </span>
+                                <span class="grafica-leyenda-valor">
+                                    ${segmento.puntos} pts · ${totalGrafica > 0 ? ((segmento.puntos / totalGrafica) * 100).toFixed(1) : "0.0"}%
+                                </span>
+                            </div>
+                        `).join("")}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    if(htmlTareasMenos60){
+        htmlTareasMenos60 = `
+            <details class="resultado-seccion">
+                <summary>Componentes y actividades que debe mejorar</summary>
+                <div class="seccion-contenido">
+                    <span style="font-size:13px;color:#555;">Se muestran las actividades evaluadas que todavía tienen respuestas incorrectas o incompletas.</span>
+                    ${htmlGraficaMejora}
+                    ${htmlTareasMenos60}
+                    <div style="margin-top:10px;padding:10px;background:#f9fafb;border:1px solid #ddd;border-radius:8px;">
+                        <b>Total de puntos que faltan:</b> +${puntosAdicionalesMenos60}
+                    </div>
+                </div>
+            </details>
+        `;
+    }
+
+    // =====================================
+    // ACTIVIDADES ASIGNADAS A ESTA PERSONA SIN PREGUNTA
+    // Solo se revisan las filas de PTACTUAL que tienen valor 1
+    // en la columna correspondiente al técnico seleccionado.
+    // Después se compara el Codigo RH contra los códigos que sí
+    // aparecen en la evaluación de esta persona.
+    // =====================================
+    const nombrePersonaPT = (document.getElementById("selectUsuario")?.value || "").trim();
+
+    // Códigos que realmente aparecen en la evaluación seleccionada.
+    const codigosEvaluados = new Set();
+    (datosActuales || []).forEach(item => {
+        const codigo = String(item.codigoPregunta || "").trim();
+        if(codigo && !codigo.includes(",")) codigosEvaluados.add(codigo);
+    });
+
+    function encontrarColumnaPersonaPT(nombre, filas){
+        if(!nombre || !filas || !filas.length) return null;
+
+        const objetivo = normalizar(nombre).replace(/\s+/g, " ");
+        const claves = Object.keys(filas[0] || {});
+
+        // Primero: coincidencia exacta del nombre con el encabezado.
+        let clave = claves.find(k => normalizar(k).replace(/\s+/g, " ") === objetivo);
+        if(clave) return clave;
+
+        // Segundo: comparación ignorando diferencias de espacios/puntuación.
+        const compacto = objetivo.replace(/[^a-z0-9]/g, "");
+        clave = claves.find(k => {
+            const nk = normalizar(k).replace(/[^a-z0-9]/g, "");
+            return nk === compacto && compacto.length > 5;
+        });
+
+        return clave || null;
+    }
+
+    const columnaPersonaPT = encontrarColumnaPersonaPT(nombrePersonaPT, datosPTActual || []);
+    const actividadesSinPregunta = {};
+
+    if(columnaPersonaPT){
+        (datosPTActual || []).forEach(registro => {
+            const valorPersona = registro[columnaPersonaPT];
+            const esAsignada =
+                valorPersona === 1 ||
+                String(valorPersona ?? "").trim() === "1";
+
+            if(!esAsignada) return;
+
+            const codigo = String(registro["Codigo RH"] || "").trim();
+            if(!codigo) return;
+
+            // Si el código ya aparece en alguna pregunta de la evaluación,
+            // esa actividad sí fue evaluada y no debe aparecer aquí.
+            if(codigosEvaluados.has(codigo)) return;
+
+            const componente = String(registro.Componente || "Sin componente").trim();
+            const descripcion = String(registro["Descripcion de Tarea"] || "").trim();
+            const puntaje = Number(
+                String(registro["Puntaje de actividad"] ?? "").replace(",", ".")
+            );
+
+            if(!Number.isFinite(puntaje)) return;
+
+            // Una actividad se muestra una sola vez por Codigo RH.
+            if(!actividadesSinPregunta[codigo]){
+                actividadesSinPregunta[codigo] = {
+                    codigo,
+                    componente,
+                    descripcion,
+                    puntaje
+                };
+            }
+        });
+    }
+
+    const listaActividadesSinPregunta = Object.values(actividadesSinPregunta);
+    const puntosSinPregunta = listaActividadesSinPregunta.reduce(
+        (suma, actividad) => suma + Number(actividad.puntaje || 0),
+        0
+    );
+
+    // PUNTAJE A COMPLETAR REAL:
+    // se suma lo que el técnico YA obtuvo + los puntos de las
+    // actividades que PTACTUAL marca con 1 pero que NO tienen
+    // ninguna pregunta en la evaluación.
+    // NO se suman nuevamente las actividades que sí tienen preguntas,
+    // aunque hayan quedado incorrectas, porque esos puntos ya forman
+    // parte de la evaluación y no deben duplicarse.
+    const puntajeQueSaco = Number(puntajeTotalObtenido || 0);
+    const puntajeQueFaltaSinPregunta = Number(puntosSinPregunta || 0);
+    const puntajePotencialPersona =
+        puntajeQueSaco + puntajeQueFaltaSinPregunta;
+
+    let htmlActividadesSinPregunta = "";
+
+    if(listaActividadesSinPregunta.length > 0){
+        const gruposSinPregunta = {};
+        listaActividadesSinPregunta.forEach(actividad => {
+            if(!gruposSinPregunta[actividad.componente]) gruposSinPregunta[actividad.componente] = [];
+            gruposSinPregunta[actividad.componente].push(actividad);
+        });
+
+        htmlActividadesSinPregunta = Object.entries(gruposSinPregunta).map(([componente, actividades]) => `
+            <details style="margin-top:10px;border:1px solid #ddd;border-radius:8px;background:#fff;">
+                <summary style="cursor:pointer;padding:10px;font-weight:700;list-style:none;">
+                    ${componente} <span style="float:right;">${actividades.length} actividades</span>
+                </summary>
+                <div style="padding:0 10px 10px;">
+                    ${actividades.map(actividad => `
+                        <div style="margin-top:8px;padding:8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:7px;">
+                            <b>Aprender: ${actividad.descripcion || "Actividad sin descripción"}</b>
+                            <span style="float:right;font-weight:bold;">+${actividad.puntaje} puntos</span>
+                            <div style="font-size:12px;color:#666;margin-top:3px;">Código RH: ${actividad.codigo}</div>
+                        </div>
+                    `).join("")}
+                </div>
+            </details>
+        `).join("");
+    }
+
+    const htmlSinPregunta = !columnaPersonaPT
+        ? `
+            <div style="margin-top:15px;padding:12px;background:#fff;border:1px solid #ddd;border-radius:8px;">
+                <b>Actividades asignadas sin pregunta</b><br>
+                No se encontró en PTACTUAL una columna que corresponda al técnico <b>${nombrePersonaPT}</b>.
+            </div>
+        `
+        : listaActividadesSinPregunta.length > 0
+        ? `
+            <details class="resultado-seccion">
+                <summary>Componentes y actividades que debe aprender</summary>
+                <div class="seccion-contenido">
+                    <div style="margin-bottom:8px;color:#555;">Solo se muestran las actividades marcadas con <b>1</b> para esta persona y cuyo código no aparece en la evaluación.</div>
+                    ${htmlActividadesSinPregunta}
+                    <div style="margin-top:10px;padding:10px;background:#f9fafb;border:1px solid #ddd;border-radius:8px;">
+                        <b>Total de puntos que faltan por estas actividades:</b> +${puntosSinPregunta}
+                    </div>
+                </div>
+            </details>
+        `
+        : `
+            <div style="margin-top:15px;padding:12px;background:#fff;border:1px solid #ddd;border-radius:8px;">
+                <b>Componentes y actividades que debe aprender</b><br>
+                No se encontraron actividades marcadas con <b>1</b> que estén ausentes de la evaluación.
+            </div>
+        `;
+
     const porcentajePuntosTotal =
         puntajeTotalPosible > 0
             ? (puntajeTotalObtenido / puntajeTotalPosible) * 100
             : 0;
 
-
+    // =====================================
+    // COMPARAR PUNTAJE TOTAL VS PUNTAJE TECNICO
+    // DE Datos_personales
+    // Se busca por el nombre del tecnico seleccionado.
+    // =====================================
     let htmlComparacionTecnico = `
         <div style="margin-top:15px;padding:12px;background:#fff;border:1px solid #ddd;border-radius:8px;">
             <b>Comparación con Datos_personales</b><br>
@@ -1069,16 +2321,84 @@ async function calcularResultado(){
                 const puntajeTecnico = Number(registro["PUNTAJE TECNICO"] || 0);
                 const diferencia = puntajeTotalObtenido - puntajeTecnico;
                 const coincide = Math.abs(diferencia) < 0.0001;
+                const faltanParaTecnico = Math.max(0, puntajeTecnico - puntajeTotalObtenido);
+
+                // Puntos de las RESPUESTAS MALAS:
+                // se suma una sola vez el puntaje de cada actividad que
+                // tiene preguntas evaluadas y al menos una respuesta incorrecta.
+                // Esto permite simular: Total + puntos de las respuestas malas.
+                const actividadesConMalas = {};
+                Object.entries(actividadEvaluacion).forEach(([codigo, actividad]) => {
+                    if(actividad.correctas >= actividad.totalPreguntas) return;
+                    const infoPT = puntosPorCodigoPT[codigo];
+                    if(!infoPT) return;
+                    actividadesConMalas[codigo] = Number(infoPT.puntaje || 0);
+                });
+                const puntosDeLasMalas = Object.values(actividadesConMalas)
+                    .reduce((suma, valor) => suma + Number(valor || 0), 0);
+                const puntajeSiLasMalasFueranBuenas = puntajePotencialPersona + puntosDeLasMalas;
+
+                let estadoReal = "";
+                if(coincide){
+                    estadoReal = "✅ El puntaje calculado coincide con PUNTAJE TECNICO.";
+                }else if(diferencia < 0){
+                    estadoReal = `⚠️ Faltan ${faltanParaTecnico} puntos para alcanzar PUNTAJE TECNICO.`;
+                }else{
+                    estadoReal = `⚠️ El puntaje calculado supera PUNTAJE TECNICO por ${diferencia} puntos.`;
+                }
+
+                // Comparación final solicitada:
+                // PUNTAJE TECNICO - (puntaje calculado + puntos de las respuestas malas)
+                const comparacionRespuestasMalas = puntajePotencialPersona + puntosDeLasMalas;
+                const diferenciaTecnicoVsMalas = puntajeTecnico - comparacionRespuestasMalas;
+                const estadoComparacionMalas = Math.abs(diferenciaTecnicoVsMalas) < 0.0001
+                    ? "✅ Coincide con PUNTAJE TECNICO."
+                    : diferenciaTecnicoVsMalas > 0
+                        ? `⚠️ Faltan ${diferenciaTecnicoVsMalas} puntos para PUNTAJE TECNICO.`
+                        : `⚠️ Supera PUNTAJE TECNICO por ${Math.abs(diferenciaTecnicoVsMalas)} puntos.`;
+
+                const diferenciaConTecnico = puntajePotencialPersona - puntajeTecnico;
 
                 htmlComparacionTecnico = `
-                    <div style="margin-top:15px;padding:12px;background:#fff;border:1px solid #ddd;border-radius:8px;">
-                        <b>Comparación con archivo excel de PT</b><br><br>
-                        <b>Nombre:</b> ${registro.NOMBRE || nombreTecnico}<br>
-                        <b>Puntaje total revalidado:</b> ${puntajeTotalObtenido}<br>
-                        <b>Puntaje tecnico evaluado:</b> ${puntajeTecnico}<br>
-                        <b>Diferencia:</b> ${diferencia}<br>
-                        
-                    </div>`;
+                    <details class="resultado-seccion">
+                        <summary>Resumen y comparación de puntajes</summary>
+                        <div class="seccion-contenido">
+                        <b>Nombre:</b> ${registro.NOMBRE || nombreTecnico}
+
+                        <div style="margin-top:10px;padding:12px;background:#eef6ff;border:1px solid #c9dff5;border-radius:8px;">
+                            <b>1. Puntaje calculado + puntaje de descripciones sin pregunta</b><br><br>
+                            Puntaje calculado: <b>${puntajeTotalObtenido}</b> puntos<br>
+                            Descripciones sin pregunta: <b>+${puntosSinPregunta}</b> puntos<br>
+                            <div style="margin-top:8px;padding:9px;background:#fff;border:1px solid #c9dff5;border-radius:7px;">
+                                <b>Total: ${puntajePotencialPersona} puntos</b>
+                            </div>
+                            <span style="display:block;margin-top:6px;font-size:13px;color:#555;">
+                                Suma del puntaje que obtuvo en la evaluación más las actividades asignadas con 1 en PTACTUAL que no tienen pregunta.
+                            </span>
+                        </div>
+
+                        <div style="margin-top:10px;padding:12px;background:#f8fafc;border:1px solid #d9dee5;border-radius:8px;">
+                            <b>2. Comparación de las respuestas malas</b><br><br>
+                            <b>Puntaje de las respuestas malas:</b> +${puntosDeLasMalas} puntos
+                            <div style="margin-top:8px;padding:10px;background:#fff;border:1px solid #d9dee5;border-radius:7px;">
+                                <b>Simulación: Total + Puntaje de las respuestas malas</b><br>
+                                Total (${puntajePotencialPersona}) + Puntaje de las respuestas malas (${puntosDeLasMalas}) = <b>${comparacionRespuestasMalas} puntos</b>
+                            </div>
+                            <div style="margin-top:8px;padding:10px;background:#fff;border:1px solid #d9dee5;border-radius:7px;">
+                                <b>Resta final</b><br>
+                                PUNTAJE TECNICO (${puntajeTecnico}) - Total simulado (${comparacionRespuestasMalas}) = <b>${diferenciaTecnicoVsMalas} puntos</b>
+                            </div>
+                            <span style="display:block;margin-top:6px;font-size:13px;color:#555;">
+                                Esta simulación muestra cuánto tendría si los puntos de las respuestas malas se convirtieran en puntos buenos.
+                            </span>
+                            <div style="margin-top:8px;font-weight:600;">${estadoComparacionMalas}</div>
+                        </div>
+
+                        <div style="margin-top:10px;padding:12px;background:#fff;border:1px solid #ddd;border-radius:8px;">
+                            <b>PUNTAJE TECNICO:</b> ${puntajeTecnico} puntos
+                        </div>
+                        </div>
+                    </details>`;
             } else {
                 htmlComparacionTecnico = `
                     <div style="margin-top:15px;padding:12px;background:#fff;border:1px solid #ddd;border-radius:8px;">
@@ -1101,24 +2421,94 @@ async function calcularResultado(){
             </table>
 
             <div style="margin-top:15px;padding:12px;background:#f9fafb;border:1px solid #ddd;border-radius:8px;">
-
+                <b>Puntaje total: ${puntajeTotalObtenido} de ${puntajeTotalPosible}</b><br>
+                <b>Calificación total por puntos: ${porcentajePuntosTotal.toFixed(1)}%</b>
             </div>
+                </div>
+            </details>
+
+            ${htmlTareasMenos60}
+
+            ${htmlSinPregunta}
 
             ${htmlComparacionTecnico}
         </div>
     `;
 
+    // Preparar únicamente el resumen de mejora para la exportación.
+    const actividadesExcel = [];
+
+    ordenResumen.forEach(componente => {
+        const grupo = resumenComponentes[componente];
+        const porcentajeComponente =
+            grupo.total > 0
+                ? (grupo.buenas / grupo.total) * 100
+                : 0;
+
+        if(porcentajeComponente >= 60) return;
+
+        Object.entries(actividadEvaluacion).forEach(([codigo, actividad]) => {
+            if(actividad.componente !== componente) return;
+            if(actividad.correctas >= actividad.totalPreguntas) return;
+
+            const infoPT = puntosPorCodigoPT[codigo];
+            if(!infoPT) return;
+
+            const registroPT = (datosPTActual || []).find(r =>
+                String(r["Codigo RH"] || "").trim() === codigo
+            );
+
+            actividadesExcel.push({
+                tipo: "Mejorar",
+                componente,
+                codigo,
+                descripcion: String(
+                    registroPT?.["Descripcion de Tarea"] || ""
+                ).trim(),
+                correctas: actividad.correctas,
+                preguntas: actividad.totalPreguntas,
+                puntos: infoPT.puntaje,
+                motivo: "Tiene respuestas incorrectas o incompletas."
+            });
+        });
+    });
+
+
+    resumenMejoraExcel = {
+        nombre: nombrePersonaPT || "Sin nombre",
+        fecha: new Date().toLocaleString("es-MX"),
+        calificacion: porcentaje,
+        correctas,
+        incorrectas,
+        actividades: actividadesExcel
+    };
+
     document.getElementById("resultado").innerHTML = `
 
         <div class="card">
-
             <h3>Resultado Final</h3>
 
-            ✅ Correctas: ${correctas}<br>
-            ❌ Incorrectas: ${incorrectas}<br><br>
+            <div class="resultado-resumen">
+                <div class="resumen-metrica">
+                    <span class="etiqueta">Respuestas correctas</span>
+                    <span class="valor">✅ ${correctas}</span>
+                </div>
+                <div class="resumen-metrica">
+                    <span class="etiqueta">Respuestas incorrectas</span>
+                    <span class="valor">❌ ${incorrectas}</span>
+                </div>
+                <div class="resumen-metrica">
+                    <span class="etiqueta">Calificación</span>
+                    <span class="valor">${porcentaje}%</span>
+                </div>
+            </div>
 
-            <b>Calificación: ${porcentaje}%</b>
-
+            <div class="seccion-ayuda">Selecciona qué información quieres revisar. Las preguntas y respuestas están ocultas por defecto; abre el componente que quieras revisar.</div>
+            <div class="resultado-controles">
+                <button type="button" onclick="document.querySelectorAll('#resultado details').forEach(d=>d.open=true)">Mostrar todo</button>
+                <button type="button" onclick="document.querySelectorAll('#resultado details').forEach(d=>d.open=false)">Ocultar todo</button>
+                <button type="button" onclick="exportarResumenMejoraExcel()">📊 Generar Excel de mejora</button>
+            </div>
         </div>
 
         ${htmlComponentes}
@@ -1127,6 +2517,241 @@ async function calcularResultado(){
 }
 
 
+// =====================================
+// EXPORTAR RESUMEN DE MEJORA A EXCEL
+// Solo utiliza la información generada al calcular.
+// =====================================
+let resumenMejoraExcel = {
+    nombre: "",
+    fecha: "",
+    calificacion: "",
+    correctas: 0,
+    incorrectas: 0,
+    actividades: []
+};
+
+function exportarResumenMejoraExcel(){
+    if(typeof XLSX === "undefined"){
+        alert("No se pudo cargar el generador de Excel. Verifica la conexión a internet.");
+        return;
+    }
+
+    const datos = resumenMejoraExcel;
+
+    if(!datos.nombre){
+        alert("Primero selecciona una persona y calcula el resultado.");
+        return;
+    }
+
+    const resumen = [
+        ["RESUMEN DE NECESIDADES DE MEJORA"],
+        [],
+        ["Técnico", datos.nombre],
+        ["Fecha", datos.fecha],
+        ["Calificación general", datos.calificacion + "%"],
+        ["Respuestas correctas", datos.correctas],
+        ["Respuestas incorrectas", datos.incorrectas],
+        [],
+        ["Tipo", "Componente", "Código RH", "Actividad / Descripción",
+         "Preguntas correctas", "Preguntas totales", "Puntos de actividad", "Motivo"]
+    ];
+
+    datos.actividades.forEach(a => {
+        resumen.push([
+            a.tipo, a.componente, a.codigo, a.descripcion,
+            a.correctas, a.preguntas, a.puntos, a.motivo
+        ]);
+    });
+
+    if(datos.actividades.length === 0){
+        resumen.push([
+            "Sin pendientes", "", "",
+            "No se detectaron actividades pendientes de mejora.",
+            "", "", "", ""
+        ]);
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(resumen);
+    ws["!cols"] = [
+        {wch:18},{wch:20},{wch:15},{wch:60},
+        {wch:20},{wch:18},{wch:20},{wch:42}
+    ];
+
+    // Formato visual del Excel: solo presentación, sin cambiar los datos.
+    // Se utiliza XLSX con soporte de estilos para conservar el contenido y mejorar únicamente la presentación.
+    const borde = {
+        top: { style: "thin", color: { rgb: "D9E2F3" } },
+        bottom: { style: "thin", color: { rgb: "D9E2F3" } },
+        left: { style: "thin", color: { rgb: "D9E2F3" } },
+        right: { style: "thin", color: { rgb: "D9E2F3" } }
+    };
+
+    const estiloTitulo = {
+        font: { name: "Calibri", sz: 16, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "1F4E78" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: borde
+    };
+    const estiloEncabezado = {
+        font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "4472C4" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: borde
+    };
+    const estiloEtiqueta = {
+        font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "1F1F1F" } },
+        fill: { fgColor: { rgb: "D9EAF7" } },
+        alignment: { vertical: "center" },
+        border: borde
+    };
+    const estiloDato = {
+        font: { name: "Calibri", sz: 11, color: { rgb: "1F1F1F" } },
+        fill: { fgColor: { rgb: "FFFFFF" } },
+        alignment: { vertical: "center", wrapText: true },
+        border: borde
+    };
+    const estiloDatoAlterno = {
+        font: { name: "Calibri", sz: 11, color: { rgb: "1F1F1F" } },
+        fill: { fgColor: { rgb: "F4F7FB" } },
+        alignment: { vertical: "center", wrapText: true },
+        border: borde
+    };
+    const estiloNumero = {
+        font: { name: "Calibri", sz: 11, color: { rgb: "1F1F1F" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: borde
+    };
+    const estiloNumeroAlterno = {
+        font: { name: "Calibri", sz: 11, color: { rgb: "1F1F1F" } },
+        fill: { fgColor: { rgb: "F4F7FB" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: borde
+    };
+
+    ws["!cols"] = [
+        { wch: 14 }, { wch: 20 }, { wch: 15 }, { wch: 58 },
+        { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 40 }
+    ];
+    ws["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }
+    ];
+    ws["!freeze"] = { xSplit: 0, ySplit: 9 };
+    ws["!autofilter"] = { ref: `A9:H${Math.max(9, resumen.length)}` };
+    ws["!rows"] = [
+        { hpt: 30 }, { hpt: 8 }, { hpt: 22 }, { hpt: 22 },
+        { hpt: 22 }, { hpt: 22 }, { hpt: 22 }, { hpt: 8 }, { hpt: 34 }
+    ];
+
+    if(ws["A1"]) ws["A1"].s = estiloTitulo;
+    for(let r = 2; r <= 7; r++){
+        if(ws[`A${r}`]) ws[`A${r}`].s = estiloEtiqueta;
+        if(ws[`B${r}`]) ws[`B${r}`].s = estiloDato;
+    }
+    for(let c = 0; c < 8; c++){
+        const cell = XLSX.utils.encode_cell({ r: 8, c });
+        if(ws[cell]) ws[cell].s = estiloEncabezado;
+    }
+    for(let r = 9; r < resumen.length; r++){
+        const alterno = (r % 2 === 0);
+        for(let c = 0; c < 8; c++){
+            const cell = XLSX.utils.encode_cell({ r, c });
+            if(!ws[cell]) continue;
+            if(c >= 4 && c <= 6){
+                ws[cell].s = alterno ? estiloNumeroAlterno : estiloNumero;
+            } else {
+                ws[cell].s = alterno ? estiloDatoAlterno : estiloDato;
+            }
+        }
+    }
+
+    // Resaltar visualmente la calificación sin alterar su valor.
+    if(ws["B5"]){
+        ws["B5"].s = {
+            font: { name: "Calibri", sz: 12, bold: true, color: { rgb: "1F4E78" } },
+            fill: { fgColor: { rgb: "E2F0D9" } },
+            alignment: { horizontal: "center", vertical: "center" },
+            border: borde
+        };
+    }
+
+    const porComponente = {};
+    datos.actividades.forEach(a => {
+        if(!porComponente[a.componente]){
+            porComponente[a.componente] = {
+                mejorar: 0,
+                aprender: 0,
+                puntos: 0
+            };
+        }
+
+        if(a.tipo === "Mejorar") porComponente[a.componente].mejorar++;
+        if(a.tipo === "Aprender") porComponente[a.componente].aprender++;
+        porComponente[a.componente].puntos += Number(a.puntos || 0);
+    });
+
+    const resumenComponentes = [
+        ["RESUMEN POR COMPONENTE"],
+        [],
+        ["Componente", "Actividades a mejorar", "Puntos relacionados"]
+    ];
+
+    Object.entries(porComponente).forEach(([componente, v]) => {
+        resumenComponentes.push([
+            componente, v.mejorar, v.puntos
+        ]);
+    });
+
+    if(Object.keys(porComponente).length === 0){
+        resumenComponentes.push(["Sin pendientes", 0, 0, 0]);
+    }
+
+    const wsComponentes = XLSX.utils.aoa_to_sheet(resumenComponentes);
+    wsComponentes["!cols"] = [
+        { wch: 28 }, { wch: 24 }, { wch: 20 }
+    ];
+
+    wsComponentes["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } }
+    ];
+    wsComponentes["!freeze"] = { xSplit: 0, ySplit: 3 };
+    wsComponentes["!autofilter"] = { ref: `A3:C${Math.max(3, resumenComponentes.length)}` };
+    wsComponentes["!rows"] = [{ hpt: 30 }, { hpt: 8 }, { hpt: 34 }];
+
+    if(wsComponentes["A1"]) wsComponentes["A1"].s = estiloTitulo;
+    for(let c = 0; c < 3; c++){
+        const cell = XLSX.utils.encode_cell({ r: 2, c });
+        if(wsComponentes[cell]) wsComponentes[cell].s = estiloEncabezado;
+    }
+    for(let r = 3; r < resumenComponentes.length; r++){
+        const alterno = (r % 2 === 0);
+        for(let c = 0; c < 3; c++){
+            const cell = XLSX.utils.encode_cell({ r, c });
+            if(!wsComponentes[cell]) continue;
+            if(c >= 1){
+                wsComponentes[cell].s = alterno ? estiloNumeroAlterno : estiloNumero;
+            } else {
+                wsComponentes[cell].s = alterno ? estiloDatoAlterno : estiloDato;
+            }
+        }
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Necesidades de mejora");
+    XLSX.utils.book_append_sheet(wb, wsComponentes, "Por componente");
+
+    const nombreArchivo = "Resumen_Mejora_" +
+        datos.nombre
+            .replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ _-]/g, "")
+            .trim()
+            .replace(/\s+/g, "_") +
+        ".xlsx";
+
+    XLSX.writeFile(wb, nombreArchivo);
+}
+
+// =====================================
+// EVENTOS
+// =====================================
 
 document
 .getElementById("selectUsuario")
@@ -1142,7 +2767,7 @@ document
     cargarPreguntas
 );
 
-
+// =====================================
 
 cargarUsuarios();
 
